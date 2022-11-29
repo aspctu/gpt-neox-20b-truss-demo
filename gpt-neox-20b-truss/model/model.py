@@ -13,15 +13,15 @@ class Model:
         self.tokenizer = None
 
     def load(self):
-        load_dir = str(self._data_dir / "weights/")
+        pretrained_model_name = "EleutherAI/gpt-neox-20b"
         offload_dir = str(self._data_dir / "offload_dir/")
         self.model = GPTNeoXForCausalLM.from_pretrained(
-            load_dir,
+            pretrained_model_name,
             device_map="auto",
             offload_folder=offload_dir,
         )
         self.tokenizer = GPTNeoXTokenizerFast.from_pretrained(
-            load_dir,
+            pretrained_model_name,
             device_map="auto",
             offload_folder=offload_dir,
         )
@@ -42,21 +42,25 @@ class Model:
 
     def predict(self, request: Dict) -> Dict[str, List]:
         response = {}
-        prompt = request["prompt"]  # noqa
+        prompt = request["prompt"]
         max_length = request.get("max_length", 100)
         temperature = request.get("temperature", 0.9)
         do_sample = request.get("do_sample", True)
 
         input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
+
         if torch.cuda.is_available():
             input_ids = input_ids.cuda()
+
         gen_tokens = self.model.generate(
             input_ids,
             do_sample=do_sample,
             temperature=temperature,
             max_length=max_length,
         )
+
         gen_text = self.tokenizer.batch_decode(gen_tokens)[0]
+
         # Invoke model and calculate predictions here.
         response["predictions"] = gen_text
         return response
