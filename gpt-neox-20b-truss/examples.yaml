@@ -1,0 +1,3 @@
+- input:
+    prompt: "GPTNeoX20B is a 20B-parameter autoregressive Transformer model developed by EleutherAI."
+  name: example1
