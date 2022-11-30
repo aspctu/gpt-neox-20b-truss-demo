@@ -1,9 +1,17 @@
 from typing import Dict, List
 
 import torch
-from transformers import GPTNeoXForCausalLM, GPTNeoXTokenizerFast
+from transformers import AutoTokenizer, OPTForCausalLM
 
 
+tokenizer = AutoTokenizer.from_pretrained("facebook/galactica-30b")
+model = OPTForCausalLM.from_pretrained("facebook/galactica-30b", device_map="auto", torch_dtype=torch.float16)
+
+input_text = "The Transformer architecture [START_REF]"
+input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to("cuda")
+
+outputs = model.generate(input_ids)
+print(tokenizer.decode(outputs[0]))
 class Model:
     def __init__(self, **kwargs) -> None:
         self._data_dir = kwargs["data_dir"]
@@ -13,14 +21,16 @@ class Model:
         self.tokenizer = None
 
     def load(self):
-        pretrained_model_name = "EleutherAI/gpt-neox-20b"
-        offload_dir = str(self._data_dir / "offload_dir/")
-        self.model = GPTNeoXForCausalLM.from_pretrained(
+        pretrained_model_name = "facebook/galactica-30b"
+        offload_dir = str(self._data_dir / "offload_dir/")        
+     
+        self.model = OPTForCausalLM.from_pretrained(
             pretrained_model_name,
             device_map="auto",
             offload_folder=offload_dir,
+            torch_dtype=torch.float16)
         )
-        self.tokenizer = GPTNeoXTokenizerFast.from_pretrained(
+        self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name,
             device_map="auto",
             offload_folder=offload_dir,
@@ -46,6 +56,9 @@ class Model:
         max_length = request.get("max_length", 100)
         temperature = request.get("temperature", 0.9)
         do_sample = request.get("do_sample", True)
+        
+        # Add end token for tokenizer
+        prompt = f"{prompt} [START_REF]"
 
         input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
 
