@@ -3,15 +3,6 @@ from typing import Dict, List
 import torch
 from transformers import AutoTokenizer, OPTForCausalLM
 
-
-tokenizer = AutoTokenizer.from_pretrained("facebook/galactica-30b")
-model = OPTForCausalLM.from_pretrained("facebook/galactica-30b", device_map="auto", torch_dtype=torch.float16)
-
-input_text = "The Transformer architecture [START_REF]"
-input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to("cuda")
-
-outputs = model.generate(input_ids)
-print(tokenizer.decode(outputs[0]))
 class Model:
     def __init__(self, **kwargs) -> None:
         self._data_dir = kwargs["data_dir"]
@@ -28,8 +19,9 @@ class Model:
             pretrained_model_name,
             device_map="auto",
             offload_folder=offload_dir,
-            torch_dtype=torch.float16)
+            torch_dtype=torch.float16,
         )
+        
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name,
             device_map="auto",
